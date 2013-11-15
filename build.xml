@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+    name="MainActivity"
+    default="help" >
+
+    <property file="local.properties" />
+
+    <property file="ant.properties" />
+
+    <property environment="env" />
+
+    <condition
+        property="sdk.dir"
+        value="${env.ANDROID_HOME}" >
+
+        <isset property="env.ANDROID_HOME" />
+    </condition>
+
+    <loadproperties srcFile="project.properties" />
+
+    <!-- quick check on sdk.dir -->
+
+    <fail
+        message="sdk.dir is missing. Make sure to generate local.properties using &apos;android update project&apos; or to inject it through the ANDROID_HOME environment variable."
+        unless="sdk.dir" />
+
+    <!-- ******************************************************* -->
+    <!-- **********        Set path variables	       ********* -->
+    <!-- ******************************************************* -->
+
+    <property
+        name="src.dir"
+        value="src" />
+
+    <property
+        name="bin.dir"
+        value="bin" />
+
+    <property
+        name="libs.dir"
+        value="libs" />
+
+    <property
+        name="lint.home"
+        value="/Applications/android-sdk-macosx/tools/lint" />
+
+    <property
+        name="findbugs.home"
+        value="/opt/findbugs" />
+
+    <property
+        name="checkstyle.home"
+        value="/opt/checkstyle" />
+
+    <property
+        name="pmd.home"
+        value="/opt/pmd" />
+
+    <property
+        name="checkstyle.rules"
+        value="checkstyle/android-rules.xml" />
+
+    <property
+        name="reports.dir"
+        value="code-analysis-reports" />
+
+    <property
+        name="package.to.analyse"
+        value="de.pixbox.client.*" />
+
+    <property
+        name="android.jar"
+        value="${sdk.dir}/platforms/android-16/android.jar" />
+    
+     <mkdir dir="${reports.dir}" />
+
+    <!-- ******************************************************* -->
+    <!-- **********        Run Lint on the project     ********* -->
+    <!-- ******************************************************* -->
+
+    <target
+        name="lint"
+        description="Runs lint on the project to look for potential bugs" >
+
+        <lint
+            executable="${lint.home}"
+            src="${src.dir}"
+            xml="${reports.dir}/lint-report.xml" />
+    </target>
+
+    <!-- ******************************************************* -->
+    <!-- **********    Run Findbugs on the project     ********* -->
+    <!-- ******************************************************* -->
+
+    <taskdef
+        name="findbugs"
+        classname="edu.umd.cs.findbugs.anttask.FindBugsTask"
+        classpath="${findbugs.home}/lib/findbugs-ant.jar"
+        description="classes+findbugs=magic" />
+
+    <target name="findbugs" >
+
+        <findbugs
+            home="${findbugs.home}"
+            onlyAnalyze="${package.to.analyse}"
+            output="xml"
+            outputFile="${reports.dir}/findbugs-report.xml" >
+
+            <sourcePath path="${src.dir}" />
+
+            <class location="${bin.dir}" />
+
+            <auxClasspath path="${android.jar}" />
+
+            <auxClasspath path="${libs.dir}/android-async-http-1.4.3.jar" />
+
+            <auxClasspath path="${libs.dir}/android-smart-image-view-1.0.0.jar" />
+
+            <auxClasspath path="${libs.dir}/gson-2.2.2.jar" />
+
+            <auxClasspath path="${libs.dir}/android-junit-report-1.5.8.jar" />
+
+            <auxClasspath path="${libs.dir}/android-support-v4.jar" />
+        </findbugs>
+    </target>
+
+    <!-- ******************************************************* -->
+    <!-- **********    Run Checkstyle on the project   ********* -->
+    <!-- ******************************************************* -->
+
+    <target name="checkstyle" >
+
+        <taskdef
+            classpath="${checkstyle.home}/checkstyle-5.6-all.jar"
+            resource="checkstyletask.properties" />
+
+        <checkstyle
+            config="${checkstyle.rules}"
+            failOnViolation="false" >
+
+            <fileset
+                dir="${src.dir}"
+                includes="**/*.java" />
+
+            <formatter
+                toFile="${reports.dir}/checkstyle-report.xml"
+                type="xml" />
+
+            <!-- Location of cache-file. Something that is project specific -->
+
+            <property
+                file="target/cachefile"
+                key="checkstyle.cache.file" />
+        </checkstyle>
+    </target>
+
+    <!-- ******************************************************* -->
+    <!-- **********        Run PMD on the project      ********* -->
+    <!-- ******************************************************* -->
+
+    <path id="pmd.classpath" >
+
+        <pathelement location="${build}" />
+
+        <fileset dir="${pmd.home}/lib/" >
+
+            <include name="*.jar" />
+        </fileset>
+    </path>
+
+    <taskdef
+        name="pmd"
+        classname="net.sourceforge.pmd.ant.PMDTask"
+        classpathref="pmd.classpath" />
+
+    <target name="pmd" >
+
+        <pmd rulesetfiles="java-imports,java-naming,java-android" >
+
+            <formatter
+                toFile="${reports.dir}/pmd-report.xml"
+                type="xml" />
+
+            <fileset dir="${src.dir}" >
+
+                <include name="**/*.java" />
+            </fileset>
+        </pmd>
+    </target>
+
+    <import
+        file="custom_rules.xml"
+        optional="true" />
+
+    <!-- version-tag: custom -->
+
+    <import file="${sdk.dir}/tools/ant/build.xml" />
+
+</project>
